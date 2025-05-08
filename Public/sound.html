@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Wave - Music & Video Downloader</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #7c3aed;
+            --dark: #171717;
+            --darker: #0f0f0f;
+            --light: #f5f5f5;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a3a3a3;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        /* Welcome Screen */
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--darker);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .welcome-logo {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .welcome-logo span:first-child {
+            color: var(--text-primary);
+        }
+        
+        .welcome-logo span:last-child {
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .glitch-effect {
+            position: relative;
+            animation: glitch 3s infinite;
+        }
+        
+        @keyframes glitch {
+            0% {
+                transform: translate(0);
+                text-shadow: none;
+            }
+            2% {
+                transform: translate(-3px, 2px);
+                text-shadow: 2px 0 #ff00ff;
+            }
+            4% {
+                transform: translate(3px, -2px);
+                text-shadow: -2px 0 #00ffff;
+            }
+            5% {
+                transform: translate(0);
+                text-shadow: none;
+            }
+            90% {
+                transform: translate(0);
+                text-shadow: none;
+            }
+            92% {
+                transform: translate(-3px, 2px);
+                text-shadow: 2px 0 #ff00ff;
+            }
+            94% {
+                transform: translate(3px, -2px);
+                text-shadow: -2px 0 #00ffff;
+            }
+            96% {
+                transform: translate(-3px, 0);
+                text-shadow: 2px 0 #ff00ff;
+            }
+            98% {
+                transform: translate(3px, 0);
+                text-shadow: -2px 0 #00ffff;
+            }
+            100% {
+                transform: translate(0);
+                text-shadow: none;
+            }
+        }
+        
+        .welcome-loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 5px solid var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .welcome-creators {
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .welcome-creators p:first-child {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .welcome-creators p:last-child {
+            font-style: italic;
+        }
+        
+        header {
+            background-color: var(--darker);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .logo h1 span:first-child {
+            color: var(--text-primary);
+        }
+        
+        .logo h1 span:last-child {
+            color: var(--primary);
+        }
+        
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--primary);
+        }
+        
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Sidebar navigation */
+        .sidebar {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background-color: var(--darker);
+            z-index: 200;
+            padding: 1rem;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .sidebar.active {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar-menu a {
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .sidebar-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar-menu svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
+        }
+        
+        .lyrics-wave-promo {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .lyrics-wave-promo h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .lyrics-wave-promo p {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .lyrics-wave-btn {
+            display: inline-block;
+            background-color: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .lyrics-wave-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        .hero {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/api/placeholder/1200/600') center/cover no-repeat;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+        
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero h2 span {
+            color: var(--primary);
+            display: block;
+        }
+        
+        .hero p {
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0;
+        }
+        
+        .search-box {
+            display: flex;
+            width: 100%;
+            max-width: 700px;
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            background-color: #222;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background-color: #222;
+            color: var(--text-primary);
+        }
+        
+        .search-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .search-button:hover {
+            background-color: var(--secondary);
+        }
+        
+        .trending-searches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .trending-tag {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .trending-tag:hover {
+            background-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .result-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+        
+        .card-content {
+            padding: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.8rem;
+        }
+        
+        .card-author {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .card-duration {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .download-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.3s;
+        }
+        
+        .audio-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .audio-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .video-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .video-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .download-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .download-btn span {
+            font-size: 0.85rem;
+        }
+        
+        .lyrics-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .lyrics-btn:hover {
+            background-color: var(--accent-hover);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: #222;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            padding: 1.5rem;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .modal-thumbnail {
+            width: 100%;
+            border-radius: 5px;
+            max-height: 300px;
+            object-fit: cover;
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .modal-author {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .download-progress {
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background-color: var(--accent);
+            transition: width 0.3s;
+        }
+        
+        .download-link {
+            display: block;
+            text-align: center;
+            background-color: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        .download-link:hover {
+            background-color: var(--secondary);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .loading div {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 3px;
+        }
+        
+        .error-message {
+            text-align: center;
+            color: #e74c3c;
+            margin: 2rem 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            background-color: var(--darker);
+            color: var(--text-secondary);
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+                border-radius: 10px;
+            }
+            
+            .search-input {
+                border-radius: 10px 10px 0 0;
+            }
+            
+            .search-button {
+                border-radius: 0 0 10px 10px;
+            }
+            
+            .results-container {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .hero h2 {
+                font-size: 2.5rem;
+            }
+            
+            .sidebar {
+                width: 270px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="welcome-screen">
+        <div class="welcome-logo">
+            <span>Sound</span> <span class="glitch-effect">Wave</span>
+        </div>
+        <div class="welcome-loader"></div>
+        <div class="welcome-creators">
+            <p>Created by</p>
+            <p>Frank Kaumba & Asta Ichiyukimøri</p>
+        </div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+            <h1><span>Sound</span> <span>Wave</span></h1>
+        </div>
+        <button class="menu-toggle" id="menu-toggle">☰</button>
+    </header>
+    
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Menu</div>
+            <button class="close-sidebar" id="close-sidebar">&times;</button>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    Home
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    </svg>
+                    Popular Songs
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                    </svg>
+                    Top Videos
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    Favorites
+                </a>
+            </li>
+            <li>
+                <a href="https://lyrics-wave.onrender.com" target="_blank">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Search Lyrics
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                    </svg>
+                    Settings
+                </a>
+            </li>
+        </ul>
+        
+        <div class="lyrics-wave-promo">
+            <h3>Looking for Lyrics?</h3>
+            <p>Find lyrics for all your favorite songs on our sister site!</p>
+            <a href="https://lyrics-wave.onrender.com" target="_blank" class="lyrics-wave-btn">Visit Lyrics Wave</a>
+        </div>
+    </div>
+
+    <section class="hero">
+        <h2>Download Unlimited <span>Music</span></h2>
+        <p>Discover and download your favorite songs with high quality audio. Access millions of tracks across all genres.</p>
+    </section>
+    
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" placeholder="Search for songs, videos, artists...">
+                <button id="search-button" class="search-button">Search</button>
+            </div>
+            <div class="trending-searches">
+                <div class="trending-tag">NF</div>
+                <div class="trending-tag">Ed Sheeran</div>
+                <div class="trending-tag">Billie Eilish</div>
+                <div class="trending-tag">Dua Lipa</div>
+                <div class="trending-tag">The Weeknd</div>
+            </div>
+        </div>
+        
+        <div class="loading">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+        
+        <div id="results" class="results-container">
+            <!-- Search results will be displayed here -->
+        </div>
+    </div>
+    
+    <!-- Download Modal -->
+    <div id="download-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <h2 id="modal-type">Download</h2>
+            </div>
+            <div class="modal-body">
+                <img id="modal-thumbnail" class="modal-thumbnail" src="" alt="Thumbnail">
+                <h3 id="modal-title" class="modal-title"></h3>
+                <p id="modal-author" class="modal-author"></p>
+                
+                <div class="download-progress">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                
+                <a id="download-link" class="download-link" href="#" download>Download</a>
+                
+                <a id="lyrics-link" class="lyrics-btn" href="https://lyrics-wave.onrender.com" target="_blank">Find Lyrics on Lyrics Wave</a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 Sound Wave - Music & Video Downloader</p>
+        <p><a href="https://lyrics-wave.onrender.com" style="color: var(--primary); text-decoration: none; margin-top: 0.5rem; display: inline-block;">lyrics-wave.onrender.com</a></p>
+    </footer>
+    
+    <script>
+        // Welcome screen loader
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const welcomeScreen = document.getElementById('welcome-screen');
+                welcomeScreen.style.opacity = '0';
+                setTimeout(function() {
+                    welcomeScreen.style.display = 'none';
+                }, 500);
+            }, 3000);
+        });
+
+        // Sidebar functionality
+        const menuToggle = document.getElementById('menu-toggle');
+        const closeSidebar = document.getElementById('close-sidebar');
+        const sidebar = document.getElementById('sidebar');
+        
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.add('active');
+        });
+        
+        closeSidebar.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+        });
+        
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!sidebar.contains(e.target) && e.target !== menuToggle) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const resultsContainer = document.getElementById('results');
+        const downloadModal = document.getElementById('download-modal');
+        const closeModal = document.querySelector('.close-modal');
+        const modalThumbnail = document.getElementById('modal-thumbnail');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalType = document.getElementById('modal-type');
+        const progressBar = document.getElementById('progress-bar');
+        const downloadLink = document.getElementById('download-link');
+        const loadingIndicator = document.querySelector('.loading');
+        const lyricsLink = document.getElementById('lyrics-link');
+        const trendingTags = document.querySelectorAll('.trending-tag');
+        
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        closeModal.addEventListener('click', function() {
+            downloadModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === downloadModal) {
+                downloadModal.style.display = 'none';
+            }
+        });
+        
+        // Update lyrics link with song title
+        function updateLyricsLink(title) {
+            const encodedTitle = encodeURIComponent(title.trim());
+            lyricsLink.href = `https://lyrics-wave.onrender.com/search?q=${encodedTitle}`;
+        }
+        
+        trendingTags.forEach(tag => {
+            tag.addEventListener('click', function() {
+                searchInput.value = tag.textContent;
+                performSearch();
+            });
+        });
+        
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (query === '') return;
+            
+            loadingIndicator.style.display = 'block';
+            resultsContainer.innerHTML = '';
+            
+            fetch(`https://kaiz-apis.gleeze.com/api/ytsearch?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.items && data.items.length > 0) {
+                        displayResults(data.items);
+                    } else {
+                        resultsContainer.innerHTML = '<div class="error-message">No results found. Try a different search term.</div>';
+                    }
+                    loadingIndicator.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    loadingIndicator.style.display = 'none';
+                    resultsContainer.innerHTML = '<div class="error-message">An error occurred while searching. Please try again.</div>';
+                });
+        }
+        
+        function displayResults(results) {
+            resultsContainer.innerHTML = '';
+            
+            results.forEach(result => {
+                const videoId = extractVideoId(result.url);
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                card.innerHTML = `
+                    <img src="${result.thumbnail}" alt="${result.title}" class="thumbnail">
+                    <div class="card-content">
+                        <div class="card-duration">${result.duration}</div>
+                        <h3 class="card-title">${result.title}</h3>
+                        <div class="download-buttons">
+                            <button class="download-btn audio-btn" data-video-id="${videoId}" data-url="${result.url}" data-title="${result.title}" data-thumbnail="${result.thumbnail}">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                </svg>
+                                <span>MP3</span>
+                            </button>
+                            <button class="download-btn video-btn" data-video-id="${videoId}" data-url="${result.url}" data-title="${result.title}" data-thumbnail="${result.thumbnail}">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                                </svg>
+                                <span>MP4</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(card);
+                
+                const audioBtn = card.querySelector('.audio-btn');
+                const videoBtn = card.querySelector('.video-btn');
+                
+                audioBtn.addEventListener('click', function() {
+                    const videoId = this.getAttribute('data-video-id');
+                    const url = this.getAttribute('data-url');
+                    const title = this.getAttribute('data-title');
+                    const thumbnail = this.getAttribute('data-thumbnail');
+                    showDownloadModal('audio', { title, thumbnail, url, videoId });
+                });
+                
+                videoBtn.addEventListener('click', function() {
+                    const videoId = this.getAttribute('data-video-id');
+                    const url = this.getAttribute('data-url');
+                    const title = this.getAttribute('data-title');
+                    const thumbnail = this.getAttribute('data-thumbnail');
+                    showDownloadModal('video', { title, thumbnail, url, videoId });
+                });
+            });
+        }
+        
+        function extractVideoId(url) {
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : '';
+        }
+        
+        function showDownloadModal(type, result) {
+            modalType.textContent = type === 'audio' ? 'Download MP3' : 'Download MP4';
+            modalThumbnail.src = result.thumbnail;
+            modalTitle.textContent = result.title;
+            modalAuthor.textContent = type === 'audio' ? 'Audio' : 'Video';
+            
+            progressBar.style.width = '0%';
+            downloadModal.style.display = 'flex';
+            updateLyricsLink(result.title);
+            
+            processDownload(type, result);
+        }
+        
+        function processDownload(type, result) {
+            let downloadUrl = '';
+            const encodedUrl = encodeURIComponent(result.url);
+            
+            if (type === 'audio') {
+                downloadUrl = `https://kaiz-apis.gleeze.com/api/ytmp3?url=${encodedUrl}`;
+            } else {
+                downloadUrl = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodedUrl}`;
+            }
+            
+            simulateProgress(function() {
+                fetch(downloadUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (type === 'audio' && data && data.download_url) {
+                            downloadLink.href = data.download_url;
+                            downloadLink.textContent = 'Download MP3';
+                            downloadLink.setAttribute('download', `${result.title}.mp3`);
+                        } else if (type === 'video' && data && data.result && data.result.download_url) {
+                            downloadLink.href = data.result.download_url;
+                            downloadLink.textContent = 'Download MP4';
+                            downloadLink.setAttribute('download', `${result.title}.mp4`);
+                        } else {
+                            downloadLink.textContent = 'Download Failed';
+                            downloadLink.removeAttribute('href');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Download error:', error);
+                        downloadLink.textContent = 'Download Failed';
+                        downloadLink.removeAttribute('href');
+                    });
+            });
+        }
+        
+        function simulateProgress(callback) {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    callback();
+                }
+                progressBar.style.width = `${progress}%`;
+            }, 200);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            searchInput.value = 'NF';
+            performSearch();
+        });
+    </script>
+</body>
+</html>
