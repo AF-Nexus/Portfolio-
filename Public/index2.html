@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundWave - Ultimate Downloader</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            color: white;
+        }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open { transform: translateX(0); }
+        
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        
+        .sidebar-content {
+            padding: 80px 20px 20px;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 30px;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #64ffda;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.1);
+            padding-left: 10px;
+        }
+        
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; color: white; }
+        .logo { 
+            font-size: 3rem; 
+            font-weight: bold; 
+            margin-bottom: 10px; 
+            text-shadow: 0 0 20px rgba(100,255,218,0.5); 
+            animation: glow 2s ease-in-out infinite alternate; 
+        }
+        .subtitle { font-size: 1.2rem; opacity: 0.9; animation: fadeInUp 1s ease-out 0.5s both; }
+        
+        .search-container { 
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(15px); 
+            border-radius: 20px; 
+            padding: 30px; 
+            margin-bottom: 30px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            animation: slideInDown 0.8s ease-out; 
+        }
+        
+        .search-box { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-input { 
+            flex: 1; 
+            padding: 15px 20px; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 1rem; 
+            background: rgba(255,255,255,0.1); 
+            color: white;
+            outline: none; 
+            transition: all 0.3s ease; 
+        }
+        
+        .search-input::placeholder { color: rgba(255,255,255,0.6); }
+        .search-input:focus { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(100,255,218,0.3); 
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .btn { 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            text-decoration: none; 
+            display: inline-block; 
+            text-align: center; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .btn-primary { background: linear-gradient(45deg, #64ffda, #00bcd4); color: #1a1a2e; }
+        .btn-secondary { background: linear-gradient(45deg, #536dfe, #3f51b5); color: white; }
+        .btn-danger { background: linear-gradient(45deg, #ff5722, #f44336); color: white; }
+        
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+        
+        .results-container { 
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(15px); 
+            border-radius: 20px; 
+            padding: 30px; 
+            margin-bottom: 30px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            display: none; 
+            animation: fadeInUp 0.6s ease-out; 
+        }
+        
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .video-result { 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 15px; 
+            padding: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            transition: all 0.3s ease; 
+            animation: slideInUp 0.5s ease-out; 
+        }
+        
+        .video-result:hover { transform: translateY(-5px) scale(1.02); }
+        
+        .video-thumbnail { 
+            width: 100%; 
+            height: 180px; 
+            border-radius: 10px; 
+            object-fit: cover; 
+            margin-bottom: 15px; 
+            transition: transform 0.3s ease; 
+        }
+        
+        .video-thumbnail:hover { transform: scale(1.05); }
+        
+        .video-title { 
+            color: white; 
+            font-size: 1rem; 
+            font-weight: bold; 
+            margin-bottom: 8px; 
+            line-height: 1.4; 
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .video-channel { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 10px; }
+        .video-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        
+        .mini-btn {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mini-btn:hover { transform: translateY(-2px); }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: slideInDown 0.3s ease-out;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover { color: #64ffda; }
+        
+        .playlist-item, .history-item, .favorite-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .player-controls {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .soundwave { display: flex; justify-content: center; align-items: center; gap: 3px; margin: 20px 0; }
+        .wave-bar { 
+            width: 4px; 
+            background: linear-gradient(to top, #64ffda, #536dfe); 
+            border-radius: 2px; 
+            animation: wave 1.5s infinite ease-in-out; 
+        }
+        
+        .wave-bar:nth-child(1) { height: 20px; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { height: 35px; animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { height: 15px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { height: 45px; animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { height: 30px; animation-delay: 0.4s; }
+        .wave-bar:nth-child(6) { height: 20px; animation-delay: 0.5s; }
+        .wave-bar:nth-child(7) { height: 40px; animation-delay: 0.6s; }
+        .wave-bar:nth-child(8) { height: 25px; animation-delay: 0.7s; }
+        
+        .spinner { 
+            display: inline-block; 
+            width: 20px; 
+            height: 20px; 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 50%; 
+            border-top-color: #64ffda; 
+            animation: spin 1s ease-in-out infinite; 
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        .notification.success { background: rgba(76, 175, 80, 0.9); }
+        .notification.error { background: rgba(244, 67, 54, 0.9); }
+        
+        @keyframes glow { 
+            from { text-shadow: 0 0 20px rgba(100,255,218,0.5); } 
+            to { text-shadow: 0 0 30px rgba(100,255,218,0.8), 0 0 40px rgba(100,255,218,0.5); } 
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes wave { 0%, 40%, 100% { transform: scaleY(0.4); } 20% { transform: scaleY(1); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 100vw; }
+            .search-box { flex-direction: column; }
+            .video-grid { grid-template-columns: 1fr; }
+            .video-actions { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Toggle -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+            <div class="sidebar-section">
+                <div class="sidebar-title">🎵 My Music</div>
+                <div class="sidebar-item" onclick="openModal('playlistModal')">📂 Playlist (<span id="playlistCount">0</span>)</div>
+                <div class="sidebar-item" onclick="openModal('favoritesModal')">⭐ Favorites (<span id="favoritesCount">0</span>)</div>
+                <div class="sidebar-item" onclick="openModal('historyModal')">📚 History (<span id="historyCount">0</span>)</div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">🔍 Tools</div>
+                <div class="sidebar-item" onclick="openModal('lyricsModal')">🎤 Lyrics Search</div>
+                <div class="sidebar-item" onclick="clearAllData()">🗑️ Clear All Data</div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">ℹ️ About</div>
+                <div class="sidebar-item" onclick="openModal('developerModal')">👨‍💻 Developer Info</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <div class="header">
+                <div class="logo">🎵 SoundWave</div>
+                <div class="subtitle">Ultimate Audio & Video Downloader made with love by Frank kaumba dev</div>
+                <div class="soundwave">
+                    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+                </div>
+            </div>
+ <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="urlInput" placeholder="🔍 Search for videos or paste any URL (YouTube, TikTok, Instagram, etc.)">
+                    <button class="btn btn-primary" onclick="processVideo()">Search</button>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-secondary" onclick="loadTrendingVideos()">🔥 Trending</button>
+                    <button class="btn btn-secondary" onclick="searchPopular()">⭐ Popular</button>
+                    <button class="btn btn-secondary" onclick="pasteFromClipboard()">📋 Paste</button>
+                    <button class="btn btn-danger" onclick="clearSearch()">🗑️ Clear</button>
+                </div>
+            </div>
+
+            <div class="results-container" id="resultsContainer">
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="playlistModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('playlistModal')">&times;</span>
+            <h2>📂 My Playlist</h2>
+            <div id="playlistContent"></div>
+        </div>
+    </div>
+
+    <div id="favoritesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('favoritesModal')">&times;</span>
+            <h2>⭐ My Favorites</h2>
+            <div id="favoritesContent"></div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('historyModal')">&times;</span>
+            <h2>📚 Search History</h2>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <div id="lyricsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('lyricsModal')">&times;</span>
+            <h2>🎤 Lyrics Search</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="lyricsSearch" placeholder="🎵 Enter song name or artist..." style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white; margin-bottom: 10px;">
+                <button class="btn btn-primary" onclick="searchLyrics()">Search Lyrics</button>
+            </div>
+            <div id="lyricsContent" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; min-height: 200px; white-space: pre-wrap; max-height: 400px; overflow-y: auto;"></div>
+            <button class="btn btn-secondary" onclick="copyLyrics()" style="margin-top: 10px;">📋 Copy Lyrics</button>
+        </div>
+    </div>
+
+    <div id="developerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('developerModal')">&times;</span>
+            <h2>👨‍💻 Developer Info</h2>
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">🇲🇼</div>
+                <h3>Frank Kaumba</h3>
+                <p style="margin: 10px 0; opacity: 0.8;">Self-taught Programmer from Malawi</p>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: left;">
+                    <h4>🚀 Projects:</h4>
+                    <p>• EFprime WA bot - WhatsApp automation bot</p>
+                    <p>• Nexus Facebook bot - Social media automation</p>
+                    <p>• SoundWave - Audio/Video downloader platform</p>
+                </div>
+                <p style="opacity: 0.7;">Passionate about creating innovative solutions and making technology accessible to everyone.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const YOUTUBE_API_KEY = 'AIzaSyC_yea1kgdVQjHiTvIKlE_oi0ldNTqRgBM';
+        const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
+        const MP3_API_BASE = 'https://kaiz-apis.gleeze.com/api/ytdown-mp3';
+        const MP4_API_BASE = 'https://kaiz-apis.gleeze.com/api/yt-down';
+        const API_KEY = '8e3b0d39-d9d4-47a1-a125-0801eb103e7f';
+        
+        let currentAudio = null;
+        let playlist = JSON.parse(localStorage.getItem('soundwave_playlist') || '[]');
+        let favorites = JSON.parse(localStorage.getItem('soundwave_favorites') || '[]');
+        let searchHistory = JSON.parse(localStorage.getItem('soundwave_history') || '[]');
+        
+        window.addEventListener('load', () => {
+            loadTrendingVideos();
+            updateCounters();
+            document.getElementById('urlInput').focus();
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+            if (modalId === 'playlistModal') loadPlaylist();
+            else if (modalId === 'favoritesModal') loadFavorites();
+            else if (modalId === 'historyModal') loadHistory();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        async function loadTrendingVideos() {
+            const trendingQueries = ['trending music 2025', 'viral songs', 'top hits', 'new music', 'popular songs', 'chart toppers'];
+            const query = trendingQueries[Math.floor(Math.random() * trendingQueries.length)];
+            
+            try {
+                const response = await fetch(`${YOUTUBE_API_BASE}/search?part=snippet&maxResults=16&q=${query}&type=video&order=viewCount&key=${YOUTUBE_API_KEY}`);
+                const data = await response.json();
+                if (data.items) displayVideos(data.items, '🔥 Trending Music');
+            } catch (error) {
+                showNotification('Failed to load trending videos', 'error');
+            }
+        }
+
+        async function searchVideos(query) {
+            addToHistory(query);
+            showLoading();
+            
+            try {
+                const response = await fetch(`${YOUTUBE_API_BASE}/search?part=snippet&maxResults=16&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`);
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error.message);
+                if (data.items && data.items.length > 0) {
+                    displayVideos(data.items, `🔍 Search Results for "${query}"`);
+                } else {
+                    showError('No videos found. Try a different search term.');
+                }
+            } catch (error) {
+                showError(`Search error: ${error.message}`);
+            }
+        }
+
+        function displayVideos(videos, title) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContainer.style.display = 'block';
+            
+            let videosHtml = `<div style="text-align: center; margin-bottom: 30px;"><h3>${title}</h3></div><div class="video-grid">`;
+            
+            videos.forEach(video => {
+                const videoUrl = `https://youtube.com/watch?v=${video.id.videoId}`;
+                const thumbnail = video.snippet.thumbnails.medium.url;
+                const publishedDate = new Date(video.snippet.publishedAt).toLocaleDateString();
+                
+                videosHtml += `
+                    <div class="video-result">
+                        <img src="${thumbnail}" alt="thumbnail" class="video-thumbnail" onclick="playVideo('${videoUrl}', '${video.snippet.title.replace(/'/g, "\\'")}')">
+                        <div class="video-title">${video.snippet.title}</div>
+                        <div class="video-channel">👤 ${video.snippet.channelTitle} • 📅 ${publishedDate}</div>
+                        <div class="video-actions">
+                            <button class="mini-btn btn-primary" onclick="downloadAudio('${videoUrl}', '${video.snippet.title.replace(/'/g, "\\'")}')">🎵 MP3</button>
+                            <button class="mini-btn btn-secondary" onclick="downloadVideo('${videoUrl}', '${video.snippet.title.replace(/'/g, "\\'")}')">📹 MP4</button>
+                            <button class="mini-btn btn-secondary" onclick="addToPlaylist('${videoUrl}', '${video.snippet.title.replace(/'/g, "\\'")}', '${thumbnail}')">📂</button>
+                            <button class="mini-btn btn-secondary" onclick="addToFavorites('${videoUrl}', '${video.snippet.title.replace(/'/g, "\\'")}', '${thumbnail}')">⭐</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            videosHtml += '</div>';
+            resultsContent.innerHTML = videosHtml;
+        }
+
+        async function downloadAudio(url, title) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner"></div>';
+            
+            try {
+                const response = await fetch(`${MP3_API_BASE}?url=${encodeURIComponent(url)}&apikey=${API_KEY}`);
+                const data = await response.json();
+                
+                if (data.download_url) {
+                    button.innerHTML = '✅';
+                    const link = document.createElement('a');
+                    link.href = data.download_url;
+                    link.download = `${title}.mp3`;
+                    link.click();
+                    showNotification('MP3 download started!', 'success');
+                } else {
+                    throw new Error('No download link found');
+                }
+            } catch (error) {
+                button.innerHTML = '❌';
+                showNotification(`Download failed: ${error.message}`, 'error');
+            }
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 3000);
+        }
+
+        async function downloadVideo(url, title) {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner"></div>';
+            
+            try {
+                const response = await fetch(`${MP4_API_BASE}?url=${encodeURIComponent(url)}&apikey=${API_KEY}`);
+                const data = await response.json();
+                
+                if (data.response && (data.response['360p'] || data.response['720p'])) {
+                    const videoData = data.response['720p'] || data.response['360p'];
+                    button.innerHTML = '✅';
+                    const link = document.createElement('a');
+                    link.href = videoData.download_url;
+                    link.download = `${title}.mp4`;
+                    link.click();
+                    showNotification('MP4 download started!', 'success');
+                } else {
+                    throw new Error('No download link found');
+                }
+            } catch (error) {
+                button.innerHTML = '❌';
+                showNotification(`Download failed: ${error.message}`, 'error');
+            }
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 3000);
+        }
+
+        function playVideo(url, title) {
+            if (currentAudio) currentAudio.pause();
+            
+
+            showNotification('Opening video in new tab', 'success');
+            window.open(url, '_blank');
+        }
+
+        function addToPlaylist(url, title, thumbnail) {
+            const item = { url, title, thumbnail, added: Date.now() };
+            playlist.unshift(item);
+            if (playlist.length > 50) playlist = playlist.slice(0, 50); 
+            localStorage.setItem('soundwave_playlist', JSON.stringify(playlist));
+            updateCounters();
+            showNotification('Added to playlist!', 'success');
+        }
+
+        function addToFavorites(url, title, thumbnail) {
+            const item = { url, title, thumbnail, added: Date.now() };
+            favorites.unshift(item);
+            if (favorites.length > 30) favorites = favorites.slice(0, 30); 
+            localStorage.setItem('soundwave_favorites', JSON.stringify(favorites));
+            updateCounters();
+            showNotification('Added to favorites!', 'success');
+        }
+
+        function addToHistory(query) {
+            if (!searchHistory.includes(query)) {
+                searchHistory.unshift(query);
+                if (searchHistory.length > 20) searchHistory = searchHistory.slice(0, 20);
+                localStorage.setItem('soundwave_history', JSON.stringify(searchHistory));
+                updateCounters();
+            }
+        }
+
+        function loadPlaylist() {
+            const content = document.getElementById('playlistContent');
+            if (playlist.length === 0) {
+                content.innerHTML = '<p style="text-align: center; opacity: 0.7;">No items in playlist yet</p>';
+                return;
+            }
+            
+            let html = '';
+            playlist.forEach((item, index) => {
+                html += `
+                    <div class="playlist-item">
+                        <div>
+                            <div style="font-weight: bold;">${item.title}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">${new Date(item.added).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                            <button class="mini-btn btn-primary" onclick="playVideo('${item.url}', '${item.title}')">▶️</button>
+                            <button class="mini-btn btn-danger" onclick="removeFromPlaylist(${index})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            content.innerHTML = html;
+        }
+
+        function loadFavorites() {
+            const content = document.getElementById('favoritesContent');
+            if (favorites.length === 0) {
+                content.innerHTML = '<p style="text-align: center; opacity: 0.7;">No favorites yet</p>';
+                return;
+            }
+            
+            let html = '';
+            favorites.forEach((item, index) => {
+                html += `
+                    <div class="favorite-item">
+                        <div>
+                            <div style="font-weight: bold;">${item.title}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;">${new Date(item.added).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                            <button class="mini-btn btn-primary" onclick="playVideo('${item.url}', '${item.title}')">▶️</button>
+                            <button class="mini-btn btn-danger" onclick="removeFromFavorites(${index})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            content.innerHTML = html;
+        }
+
+        function loadHistory() {
+            const content = document.getElementById('historyContent');
+            if (searchHistory.length === 0) {
+                content.innerHTML = '<p style="text-align: center; opacity: 0.7;">No search history</p>';
+                return;
+            }
+            
+            let html = '';
+            searchHistory.forEach((query, index) => {
+                html += `
+                    <div class="history-item">
+                        <div style="font-weight: bold;">${query}</div>
+                        <div>
+                            <button class="mini-btn btn-primary" onclick="searchAgain('${query}')">🔍</button>
+                            <button class="mini-btn btn-danger" onclick="removeFromHistory(${index})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            content.innerHTML = html;
+        }
+
+        function removeFromPlaylist(index) {
+            playlist.splice(index, 1);
+            localStorage.setItem('soundwave_playlist', JSON.stringify(playlist));
+            updateCounters();
+            loadPlaylist();
+            showNotification('Removed from playlist', 'success');
+        }
+
+        function removeFromFavorites(index) {
+            favorites.splice(index, 1);
+            localStorage.setItem('soundwave_favorites', JSON.stringify(favorites));
+            updateCounters();
+            loadFavorites();
+            showNotification('Removed from favorites', 'success');
+        }
+
+        function removeFromHistory(index) {
+            searchHistory.splice(index, 1);
+            localStorage.setItem('soundwave_history', JSON.stringify(searchHistory));
+            updateCounters();
+            loadHistory();
+            showNotification('Removed from history', 'success');
+        }
+
+        function searchAgain(query) {
+            closeModal('historyModal');
+            document.getElementById('urlInput').value = query;
+            searchVideos(query);
+        }
+
+async function searchLyrics() {
+    const query = document.getElementById('lyricsSearch').value.trim();
+    const content = document.getElementById('lyricsContent');
+    
+    if (!query) {
+        showNotification('Please enter a song name', 'error');
+        return;
+    }
+    
+    content.innerHTML = '<div class="spinner"></div> Searching for lyrics...';
+    
+    try {
+        const formattedQuery = encodeURIComponent(query.replace(/\s+/g, '+'));
+        const apiUrl = `https://kaiz-apis.gleeze.com/api/lyrics?title=${formattedQuery}&apikey=8e3b0d39-d9d4-47a1-a125-0801eb103e7f`;
+        
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.lyrics && data.title) {
+            const formattedResponse = {
+                author: "frank kaumba",
+                title: data.title,
+                thumbnail: data.thumbnail || "",
+                lyrics: data.lyrics
+            };
+                  content.innerHTML = `
+                <div class="lyrics-result">
+                    <h3>🎵 ${formattedResponse.title}</h3>
+                    <p><strong>Author:</strong> ${formattedResponse.author}</p>
+                    ${formattedResponse.thumbnail ? `<img src="${formattedResponse.thumbnail}" alt="Thumbnail" style="max-width: 200px; border-radius: 8px; margin: 10px 0;">` : ''}
+                    <div class="lyrics-text">
+                        <pre>${formattedResponse.lyrics}</pre>
+                    </div>
+                </div>
+            `;
+        } else {
+            content.innerHTML = `❌ No lyrics found for "${query}". Please try a different search term.`;
+        }
+        
+    } catch (error) {
+        console.error('Error fetching lyrics:', error);
+        content.innerHTML = `❌ Error searching for lyrics. Please check your connection and try again.`;
+        showNotification('Failed to fetch lyrics', 'error');
+    }
+}
+
+        function copyLyrics() {
+            const content = document.getElementById('lyricsContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                showNotification('Lyrics copied to clipboard!', 'success');
+            }).catch(() => {
+                showNotification('Failed to copy lyrics', 'error');
+            });
+        }
+
+        function updateCounters() {
+            document.getElementById('playlistCount').textContent = playlist.length;
+            document.getElementById('favoritesCount').textContent = favorites.length;
+            document.getElementById('historyCount').textContent = searchHistory.length;
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This will remove your playlist, favorites, and history.')) {
+                playlist = [];
+                favorites = [];
+                searchHistory = [];
+                localStorage.removeItem('soundwave_playlist');
+                localStorage.removeItem('soundwave_favorites');
+                localStorage.removeItem('soundwave_history');
+                updateCounters();
+                showNotification('All data cleared!', 'success');
+            }
+        }
+
+        async function processVideo() {
+            const input = document.getElementById('urlInput').value.trim();
+            if (!input) {
+                showNotification('Please enter a URL or search term', 'error');
+                return;
+            }
+            
+            if (input.includes('http') || input.includes('youtube.com') || input.includes('youtu.be')) {
+                processUrl(input);
+            } else {
+                searchVideos(input);
+            }
+        }
+
+        function processUrl(url) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContainer.style.display = 'block';
+            
+            let title = 'Direct Download';
+            let platform = '🎵';
+            
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                title = 'YouTube Video';
+                platform = '📺';
+            } else if (url.includes('tiktok.com')) {
+                title = 'TikTok Video';
+                platform = '🎭';
+            } else if (url.includes('instagram.com')) {
+                title = 'Instagram Video';
+                platform = '📷';
+            }
+            
+            resultsContent.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 6rem; margin: 20px 0;">${platform}</div>
+                    <h3>${title}</h3>
+                    <p style="opacity: 0.7; margin: 10px 0;">${url}</p>
+                    <div style="margin: 30px 0;">
+                        <button class="btn btn-primary" onclick="downloadAudio('${url}', '${title}')">🎵 Download MP3</button>
+                        <button class="btn btn-secondary" onclick="downloadVideo('${url}', '${title}')" style="margin-left: 10px;">📹 Download MP4</button>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="addToPlaylist('${url}', '${title}', '')">📂 Add to Playlist</button>
+                        <button class="btn btn-secondary" onclick="addToFavorites('${url}', '${title}', '')" style="margin-left: 10px;">⭐ Add to Favorites</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function searchPopular() {
+            const query = 'popular music 2025';
+            document.getElementById('urlInput').value = query;
+            searchVideos(query);
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('urlInput').value = text;
+                showNotification('Text pasted from clipboard!', 'success');
+            } catch (err) {
+                showNotification('Unable to paste from clipboard', 'error');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('urlInput').value = '';
+            loadTrendingVideos();
+        }
+
+        function showLoading() {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner"></div><p style="margin-top: 20px;">Searching for videos...</p></div>';
+        }
+
+        function showError(message) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = `<div style="text-align: center; padding: 50px; color: #ff5722;"><div style="font-size: 3rem; margin-bottom: 20px;">❌</div><p>${message}</p></div>`;
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `${type === 'success' ? '✅' : '❌'} ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+            }, 4000);
+        }
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') processVideo();
+        });
+
+        document.getElementById('lyricsSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchLyrics();
+        });
+        window.addEventListener('click', function(e) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            
+            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>
